@@ -1,0 +1,204 @@
+#+options: tex:imagemagick
+
+* Configuration [twee2]
+#+BEGIN_EXAMPLE
+Twee2::build_config.story_format = 'SugarCube2.35'
+#+END_EXAMPLE
+
+* StoryStyleSheet                                                :stylesheet:
+
+
+#+BEGIN_VERBATIM
+body {
+  background: white;
+  color: black;
+}
+
+#init-screen {color: red;}
+
+#menu li a {color: black;}
+h1 {color: black;}
+
+div {background: white; color: black}
+
+select {color: black;}
+#+END_VERBATIM
+
+
+* StoryTitle
+
+The Dilution Solution
+
+* StoryAuthor
+
+John Kitchin
+
+* Start
+<<silently>>
+<<set $visitedA to false>>
+<<set $visitedB to false>>
+<<set $inventory = []>>
+<</silently>>
+Welcome to the *Dilution choose your own adventure lab!*
+Please proceed to [[The solution to dilution]].
+
+
+* The solution to dilution
+
+You need to make 5 mL of a 5uM solution. Check out the items below, and select the ones that you will need.
+
+<<if ($visitedA is true) and ($visitedB is true)>>It looks like you are ready to go to the [[supply room]].
+<<else>>You have some reading to do to get ready for this lab.
+
+Check out [[safety]] <<if $visitedA is true>> (done)<</if>>.
+Then, read about [[dilution]] <<if $visitedB is true>> (done)<</if>>.
+<</if>>
+
+* safety
+<<set $visitedA to true>>
+
+Double check this MSDS: https://fscimage.fishersci.com/msds/21105.htm
+
+<<return>>
+
+* dilution
+<<set $visitedB to true>>
+
+The key equation in dilution is $C_1 V_1 = C_2 V_2$.
+
+<<return>>
+
+* supply room
+
+Choose from the following items by clicking on the things you need for this lab.
+
+
+#+attr_twee: :setter $inventory.push("2M soln") :link supply room
+#+attr_org: :width 80
+[[./screenshots/date-12-05-2021-time-16-45-07.png]]
+<<if $inventory.indexOf("2M soln") gte 0>>You have the 2M solution.<<else>>You do not have this.<</if>>
+
+
+#+attr_twee: :setter $inventory.push("100 ml") :link supply room
+#+attr_org: :width 80
+[[./screenshots/date-12-05-2021-time-16-45-13.png]]
+<<if $inventory.indexOf("100 ml") gte 0>>You have the 100 mL cylinder.<<else>>You do not have this.<</if>>
+
+#+attr_twee: :setter $inventory.push("10 ml") :link supply room
+#+attr_org: :width 80
+[[./screenshots/date-12-05-2021-time-16-45-18.png]]
+<<if $inventory.indexOf("10 ml") gte 0>>You have the 10 mL cylinder.<<else>>You do not have this.<</if>>
+
+#+attr_twee: :setter $inventory.push("2 ml") :link supply room
+#+attr_org: :width 80
+[[./screenshots/date-12-05-2021-time-16-45-21.png]]
+<<if $inventory.indexOf("2 ml") gte 0>>You have the 2 mL syringe.<<else>>You do not have this.<</if>>
+
+You are carrying:
+<<print $inventory>>
+
+
+<<if ($inventory.indexOf("2M soln") gte 0) and
+($inventory.indexOf("100 ml") gte 0) and
+($inventory.indexOf("10 ml") gte 0) and
+($inventory.indexOf("2 ml") gte 0)>>
+You have what you need, time to head to the [[lab]]!
+<<else>>You don't seem to have the right things yet. Keep looking.
+<</if>>
+
+* lab
+
+You have three choices. Choose wisely!
+
+- [[one shot dilution]]
+- [[two-fold dilution]]
+- [[100-fold dilution]]
+
+* one shot dilution
+
+This seems like the best choice because you would only have to make one dilution. Unfortunately, you don't have the equipment required to do this. The problem is you would have to be able to accurately measure an ultratiny volume of the solution, e.g. 1.25e-7 L of the 2M solution. Try again!
+
+#+BEGIN_SRC python
+C0 = 2  # mol / L
+
+C1 = 5e-5 # Desired concentration mol / L
+V1 = 0.005 # desired volume in L
+V0 = (C1 * V1) / C0
+print(f'V = {V0 * 1000} mL')
+#+END_SRC
+
+#+RESULTS:
+: V = 0.00012500000000000003 mL
+
+* two-fold dilution
+
+This seems like an easy way to go. It leads to a lot of work though. You will measure 2.5 mL of each solution, and add it to 2.5 mL of water for each dilution, and you will end up doing 16 dilutions!
+
+#+BEGIN_SRC python
+C = 2
+i = 1
+while C > 5e-5:
+  print(f'{i}. {C} -> {C / 2}')
+  C /= 2
+  i += 1
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+1. 2 -> 1.0
+2. 1.0 -> 0.5
+3. 0.5 -> 0.25
+4. 0.25 -> 0.125
+5. 0.125 -> 0.0625
+6. 0.0625 -> 0.03125
+7. 0.03125 -> 0.015625
+8. 0.015625 -> 0.0078125
+9. 0.0078125 -> 0.00390625
+10. 0.00390625 -> 0.001953125
+11. 0.001953125 -> 0.0009765625
+12. 0.0009765625 -> 0.00048828125
+13. 0.00048828125 -> 0.000244140625
+14. 0.000244140625 -> 0.0001220703125
+15. 0.0001220703125 -> 6.103515625e-05
+16. 6.103515625e-05 -> 3.0517578125e-05
+#+end_example
+
+#+BEGIN_SRC python
+C0 = 6.103515625e-05
+C1 = 5e-5
+V1 = 0.005
+
+V0 = (C1 * V1) / C0
+print(f'V = {V0 * 1000} mL')
+#+END_SRC
+
+#+RESULTS:
+: V = 4.096000000000001 mL
+
+Finally, you need one more dilution to get to 5e-5. You need 4.1 mL of the last dilution and 0.9 mL of water to get to the final solution. If all the dilutions above are perfectly done, this leads to a final concentration of 5.005e-5 M, which is probably close enough.
+
+Sigh, you have run out of time today and didn't get to finish the experiment.
+
+
+* 100-fold dilution
+
+You decide to do a set of 100 fold dilutions. These are easy, you measure 1 mL of the 2M solution, and add 99 mL of water to it to make a 0.02 M solution.
+
+Then take a mL of the 0.02 M solution and add it to 99 mL of water to make a 0.0002 M solution. That is still kind of high. you could do a single dilution from here to the desired concentration, but you need to be able to measure bout 0.125 mL accurately which is tricky.
+
+You do one more 10-fold dilution where you use 1 mL of the 0.0002M solution and add it to 9 mL of water to get a 0.00002M solution.
+Now, with one more dilution where you put 1.25 mL of the 2e-5M solution in the 10 mL graduated cylinder, and then fill it with water up to the 5 mL mark you have the solution you need!
+
+#+BEGIN_SRC python
+C0 = 2e-5
+C1 = 5e-6
+V1 = 0.005
+
+V0 = (C1 * V1) / C0
+print(f'V = {V0 * 1000} mL')
+#+END_SRC
+
+#+RESULTS:
+: V = 1.25 mL
+
+Great work, now you can continue to the next setp in this lab.
